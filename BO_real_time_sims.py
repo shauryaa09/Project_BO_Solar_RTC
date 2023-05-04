@@ -173,7 +173,7 @@ for t in range(iter):
         # tab = np.array([Jsc_device, Jsc_CROWM, Jsc_total_unshadowed, Jsc_total_shadowed, Jsc_top, Jsc_bot, Voc, FF, Eff, V_mpp, J_mpp],dtype=float)
         # tab=tab.astype(float)
         # Table.append(tab)
-        P_max_year = P_max_year + (V_mpp * J_mpp * 0.01 * 240 )  #
+        P_max_year = P_max_year + (V_mpp * J_mpp * 0.01 )  #
 
 
     F_train = np.append(F_train, P_max_year)
