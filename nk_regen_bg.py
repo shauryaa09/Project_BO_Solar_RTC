@@ -9,12 +9,13 @@ file_pero="jw_pero3cat_2to1_match_interp.nk"
 file_si="c-Si_interp.nk"
 temp_pero="integer_template_pero.nk"
 
-# x="data_template_pero_concat.nk"
-# df_add=pd.read_csv(x,sep="\t",index_col=False)
+##temp is the file containing values for interpolation purpose
 df_temp_pero=pd.read_csv(temp_pero,sep="\t",index_col=False)
 
 f="datetime_zenith_azimuth_temperature.csv"
 dat=pd.read_csv(f)
+
+## create shifted bandgap nk file
 def wav_at(T):
     bg_p=1.710344827586206896551724137931 + 0.00031*(T-25)
     bg_s=1.11-0.000273*(T-27)
