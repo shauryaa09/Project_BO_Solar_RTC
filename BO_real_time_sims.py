@@ -103,6 +103,7 @@ for t in range(iter):
             elif ct == 47:
                 li = "Base name of the output files:         PK_Si_tandem" + st + str(dza.DateTime[k])+"_" + str(dza.zenith[k])+"_" + str(dza.azimuth[k])
                 f.writelines(li + "\n")
+                ## base name is the name of the output file
             else:
                 f.writelines(li + "\n")
 
