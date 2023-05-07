@@ -15,34 +15,15 @@ import time
 from scipy.stats import norm
 from sklearn.gaussian_process.kernels import ExpSineSquared
 
-#np.set_printoptions(threshold=sys.maxsize)
-##training set
-# "N is no. of dimensions of the problem" #not here
-
+# "N is no. of layers"
 N = 15
-low_lim = np.zeros(N, dtype=int)
-upp_lim = []
-points = []
-# for i in range(N):
-#     print('Enter starting thickness in nm for layer '+str(i+1))
-#     nx = int(input())
-#     print('Enter ending thickness in nm for layer '+ str(i+1))
-#     mx = int(input())
-#     offset.append(nx)
-#     upp_lim.append(mx)
-#     pt=int((mx-nx+1)/5)
-#     points.append(pt)
 
-# df_n=pandas.DataFrame()
-# df_n[0]=low_lim
-# df_n[1]=upp_lim
-# df_n[2]=points
-# df_n[3]=offset
 
 df_n = pandas.read_csv('data_frame_tandem_real_time_sims.csv')
 df_n.columns = ['start', 'end', 'total points']
 
-##training set
+##training set - first argument here
+
 X = np.empty(N,dtype=object)
 for i in range(N):
     X[i] = np.random.randint(df_n.iloc[i, 0], df_n.iloc[i, 1], 1).astype(int)
@@ -97,18 +78,21 @@ temp_env_list=[]
 #Table=np.array(['Jsc_device','Jsc_CROWM','Jsc_total_unshadowed','Jsc_total_shadowed','Jsc_top', 'Jsc_bot','Voc','FF','Eff','V_mpp','J_mpp'])
 print("Enter run name")
 rname=str(input())
-
+##zenith azimuth ... file read
 dza = pd.read_csv("datetime_zenith_azimuth_temperature.csv")
 files = 1092
+
 for t in range(iter):
     P_max_year = 0.0
+    ## Input files are created in the correct folder from where a Matlab script can pick them up and simulate it using CROWM in terminal. The same script transfers the file with values of current etc. back to another folder
     for k in range(files):
         st = '_'
         for i in range(N):
             st = st + str(X_new[i]) + "_"
-        original = "PK_Si_tandem_DST_reference_real_time_sims.txt"
+        original = "PK_Si_tandem_DST_reference_real_time_sims.txt" ## An example input file is put in the repository 
         f = open(r"C:\Users\Shaurya\Crowm_sims_BO_shaurya\In\PK_Si_tandem" + st + str(dza.DateTime[k])+"_" + str(dza.zenith[k])+"_" + str(dza.azimuth[k])+"_" + str(dza.Temperature_cell[k])+ ".txt", "w")
         ct = 0
+        ## Reformatting original input file for our simulation
         for line in open(original):
             ct = ct+1
             li=line.strip()
@@ -133,13 +117,7 @@ for t in range(iter):
             else:
                 f.writelines(li + "\n")
 
-            # li = line.strip()
-            # if not li.startswith("Base"):
-            #     f.writelines(li + "\n")
-            # else:
-            #
-            #     f.writelines(li + "\n")
-
+        ##putting thickness numbers
         for i in range(N):
             l = str(X_new[i]) + "\n"
             f.write(l)
@@ -147,7 +125,7 @@ for t in range(iter):
         l = str(0)
         f.write(l)
         f.close()
-
+    ## Waiting for file after a matlab script transfers it back to the correct folder
     for k in range(files):
         print("Got File no. ",k)
         file_exists=False
@@ -160,16 +138,16 @@ for t in range(iter):
                 break
             else:
                 time.sleep(10)
-
+        ##reading current density values
         ct = 0
         f1 = open(r"C:\Users\Shaurya\Crowm_sims_BO_shaurya\Out\PK_Si_tandem" + st + str(dza.DateTime[k])+"_" + str(dza.zenith[k])+"_" + str(dza.azimuth[k])+"_Jsc.txt", "r")
         for line in f1:
             ct= ct + 1
             if ( ct == 10 ):
-                l1 = float(line[:11])
+                l1 = float(line[:11])  ##Jsc_pk
             if ( ct == 14 ):
-                l2 = float(line[:11])
-
+                l2 = float(line[:11])  ##Jsc_si
+        ##MATLAB electrical simulation code start with 6 inputs : thickness,finger number, Jsc_pk,Jsc_si,resistance change Pk : Rs-T, and for si -RS_t_shj
         eng = matlab.engine.start_matlab()
         thickness = float(X_new[2])
         finger_no = float(2)
@@ -186,9 +164,10 @@ for t in range(iter):
         tab = np.array([Jsc_device, Jsc_CROWM, Jsc_total_unshadowed, Jsc_total_shadowed, Jsc_top, Jsc_bot, Voc, FF, Eff, V_mpp, J_mpp],dtype=float)
         tab=tab.astype(float)
         Table.append(tab)
+                ##Power calculation
         P_max_year = P_max_year + (V_mpp * J_mpp * 0.01 )
 
-
+            ##copying the thickness and corresponding current values into a file for later use
     F_train = np.append(F_train, P_max_year)
     X_new_copy = X_new
     dat_frame.append(X_new_copy)
@@ -199,7 +178,7 @@ for t in range(iter):
     savetxt("Table"+rname+".txt",Table)
 
     f_max = np.max(F_train)
-
+        ##GPR model fitting
     dftest, scaler = scan_set_gen()
     gpr = gp.GaussianProcessRegressor(kernel=None, optimizer = " fmin_l_bfgs_b", n_restarts_optimizer=10, alpha=1e-3,
                                       normalize_y=True, random_state=2).fit(df,F_train)
@@ -221,12 +200,12 @@ for t in range(iter):
     for i in range(N):
         X_new[i] = scaler[i].inverse_transform((newsample[i]).reshape(-1, 1))
 
-    ##appending
+    ##appending thickness into dataset, current is already in ftrain
 
     df.loc[len(df)] = newsample
-
-    #F_train = np.append(F_train, (F[tuple(X_new[i] for i in range(len(X_new)))]))
+    
     print(P_max_year, "          P_max_year at   ", X_new_copy)
+    ##convergence criterion
     if (abs(P_max_year - f_max)/f_max) < 1e-3:
         tick = True
         print("Location         " + "Maxima")
