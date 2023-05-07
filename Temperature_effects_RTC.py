@@ -65,7 +65,7 @@ def scan_set_gen():
     return dftest, scaler
 
 c = 0
-iter = 1 ##just studying temperature effects
+iter = 1 ##just studying temperature effects but for future use iter can be higher for optimizing thickness with temperature as a third hyperparameter along with zenith and azimuth
 maximum_tracker = np.zeros(iter)
 start_time = time.time()
 
