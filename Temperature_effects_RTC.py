@@ -65,7 +65,7 @@ def scan_set_gen():
     return dftest, scaler
 
 c = 0
-iter = 1
+iter = 1 ##just studying temperature effects
 maximum_tracker = np.zeros(iter)
 start_time = time.time()
 
@@ -178,7 +178,7 @@ for t in range(iter):
     savetxt("Table"+rname+".txt",Table)
 
     f_max = np.max(F_train)
-        ##GPR model fitting
+        ##GPR model fitting  : for future use we will add temperature as a third hyperparameter and then optimize for thickness
     dftest, scaler = scan_set_gen()
     gpr = gp.GaussianProcessRegressor(kernel=None, optimizer = " fmin_l_bfgs_b", n_restarts_optimizer=10, alpha=1e-3,
                                       normalize_y=True, random_state=2).fit(df,F_train)
